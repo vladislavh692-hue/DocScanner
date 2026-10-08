@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity() {
         val shot = Button(this).apply { text = "СКАНИРОВАТЬ"; setOnClickListener { takePhoto() } }
         pdfButton = Button(this).apply { text = "PDF (0)"; setOnClickListener { if (pages.isNotEmpty()) makePdf() else toast("Сначала отсканируйте страницу") } }
         bar.addView(shot, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        bar.addView(pdf, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        bar.addView(pdfButton, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         root.addView(bar)
         setContentView(root)
     }
