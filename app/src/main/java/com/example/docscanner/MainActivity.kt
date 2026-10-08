@@ -33,6 +33,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private lateinit var preview: PreviewView
+    private lateinit var pdfButton: Button
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
     private val pages = mutableListOf<File>()
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(preview, LinearLayout.LayoutParams(-1, 0, 1f))
         val bar = LinearLayout(this).apply { gravity = Gravity.CENTER; setPadding(12, 12, 12, 20) }
         val shot = Button(this).apply { text = "СКАНИРОВАТЬ"; setOnClickListener { takePhoto() } }
-        val pdf = Button(this).apply { text = "PDF (0)"; setOnClickListener { if (pages.isNotEmpty()) makePdf() else toast("Сначала отсканируйте страницу") } }
+        pdfButton = Button(this).apply { text = "PDF (0)"; setOnClickListener { if (pages.isNotEmpty()) makePdf() else toast("Сначала отсканируйте страницу") } }
         bar.addView(shot, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         bar.addView(pdf, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         root.addView(bar)
@@ -65,11 +66,18 @@ class MainActivity : AppCompatActivity() {
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(this)
         future.addListener({
-            val provider = future.get()
+            val provider = try { future.get() } catch (e: Exception) {
+                runOnUiThread { toast("Не удалось запустить камеру") }
+                return@addListener
+            }
             val p = Preview.Builder().build().also { it.setSurfaceProvider(preview.surfaceProvider) }
             imageCapture = ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build()
             provider.unbindAll()
-            provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, p, imageCapture)
+            try {
+                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, p, imageCapture)
+            } catch (e: Exception) {
+                runOnUiThread { toast("Камера недоступна: ${e.message ?: "ошибка"}") }
+            }
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -85,7 +93,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     val root = findViewById<LinearLayout>(android.R.id.content).getChildAt(0) as LinearLayout
                     val bar = root.getChildAt(1) as LinearLayout
-                    (bar.getChildAt(1) as Button).text = "PDF (${pages.size})"
+                    pdfButton.text = "PDF (${pages.size})"
                     toast("Страница ${pages.size} добавлена")
                 }
             }
